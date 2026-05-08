@@ -101,8 +101,8 @@ def generate_overlay_pdf():
     # 表格內容
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
-    c.drawString(350, 690, name)              
-    c.drawString(410, 650, plate)             
+    c.drawString(150, 690, name)              
+    c.drawString(350, 690, plate)             
     c.drawString(160, 615, f"{roc_date_range} ~ {roc_date_range}")
     c.drawString(160, 580, selected_time)
     
