@@ -27,7 +27,7 @@ companies = config.sections()
 if 'Common' in companies:
     companies.remove('Common')
 
-st.title("🚗 停車申請單產生器 (新版格式)")
+st.title("🚗 停車申請單產生器")
 
 # 2. 介面輸入區
 selected_company = st.selectbox("公司名稱", options=companies)
@@ -77,7 +77,7 @@ def generate_pdf_buffer():
     font_name = "MSJH"
     font_bold_name = "MSJH-Bold"
     
-    # 判斷字型路徑
+    # 字型路徑判斷
     local_font = "msjh.ttc"
     local_font_bold = "msjhbd.ttc"
     
@@ -92,16 +92,16 @@ def generate_pdf_buffer():
     t_x, t_top_y, t_w = 57.5, height - 95, 480
     row_hs = [35, 35, 35, 35, 85]
 
-    # 1. 標題 
+    # 1. 標題
     c.setFont(font_name, 20)
     c.drawCentredString(width/2, height - 60, "神通企業總部大樓臨時停車申請單")
     
-    # 2. 表頭 (申請部門、填單日期) [cite: 2, 4]
+    # 2. 表頭 (申請部門、填單日期)
     c.setFont(font_name, 11)
     c.drawString(t_x, t_top_y + 8, "申請部門：")
     c.drawRightString(t_x + t_w, t_top_y + 8, f"填單日期： {today_roc}")
 
-    # 3. 表格數據 
+    # 3. 表格數據 (使用您圖片中的格式)
     full_date_range = f"{roc_selected_date} ~ {roc_selected_date}"
     data = [
         ['公司', selected_company, '職稱', title],
@@ -132,19 +132,23 @@ def generate_pdf_buffer():
     c.rect(t_x, t_top_y - sum(row_hs), t_w, sum(row_hs))
     c.rect(t_x - 2, t_top_y - sum(row_hs) - 2, t_w + 4, sum(row_hs) + 4)
 
-    # 5. 頁尾簽署區 [cite: 5, 6, 7]
+    # 5. 簽署區 (根據您的新圖片修改排版)
     y_f = t_top_y - sum(row_hs) - 25
-    c.setFont(font_name, 11)
+    c.setFont(font_name, 12)
+    # 部級主管在左側
     c.drawString(t_x, y_f, "部級主管：")
-    c.drawCentredString(width/2, y_f, "總務部：")
+    # 申請人在右側
     c.drawRightString(t_x + t_w, y_f, f"申請人：{applicant}")
     
-    # 6. 表單編號與警語 [cite: 8, 9]
+    # 總務部獨立一行 (參考一般公文排版)
+    c.drawString(t_x, y_f - 40, "總務部：")
+    
+    # 6. 表單編號與底部警語
     c.setFont(font_name, 9)
-    c.drawString(t_x, y_f - 60, "GEP-99-4-12-A")
+    c.drawString(t_x, y_f - 75, "GEP-99-4-12-A")
     
     c.setFont(font_bold_name, 10.5)
-    c.drawCentredString(width/2, y_f - 90, "*本單須經部級(含)以上主管及總務部簽字後，送警衛室憑單放行*")
+    c.drawCentredString(width/2, y_f - 100, "*本單須經部級(含)以上主管及總務部簽字後，送警衛室憑單放行*")
 
     c.showPage()
     c.save()
@@ -155,7 +159,7 @@ def generate_pdf_buffer():
 st.divider()
 pdf_data = generate_pdf_buffer()
 st.download_button(
-    label="📥 下載 PDF 申請單 (新格式)",
+    label="📥 下載 PDF 申請單",
     data=pdf_data,
     file_name=f"停車申請單_{name}.pdf",
     mime="application/pdf",
