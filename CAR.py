@@ -125,7 +125,7 @@ def generate_overlay_pdf():
     # 預計停車日期 (Y=655)
     c.drawString(190, 655, roc_parts['year'])
     c.drawString(245, 655, roc_parts['month'])
-    c.drawString(300, 655, roc_parts['day'])
+    c.drawString(290, 655, roc_parts['day'])
     c.drawString(350, 655, roc_parts['year'])
     c.drawString(410, 655, roc_parts['month'])
     c.drawString(455, 655, roc_parts['day'])
