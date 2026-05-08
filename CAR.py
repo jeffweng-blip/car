@@ -32,7 +32,7 @@ if 'Common' in companies: companies.remove('Common')
 m_left, m_content, _ = st.columns([1, 8, 1])
 
 with m_content:
-    # --- [修正] 修改標題文字與字體大小 (與下方子標題同級) ---
+    # 標題與子標題字級相同
     st.markdown("### 臨時停車申請單 產生器")
 
     # --- UI 介面 ---
@@ -123,15 +123,15 @@ with m_content:
         c.drawString(150, 690, name)              
         c.drawString(350, 690, plate)             
         
-    # 預計停車日期 (Y=655)
-    c.drawString(190, 655, roc_parts['year'])
-    c.drawString(245, 655, roc_parts['month'])
-    c.drawString(300, 655, roc_parts['day'])
-    c.drawString(350, 655, roc_parts['year'])
-    c.drawString(410, 655, roc_parts['month'])
-    c.drawString(455, 655, roc_parts['day'])
+        # 預計停車日期 (修正縮排，移入函數內)
+        c.drawString(190, 655, roc_parts['year'])
+        c.drawString(245, 655, roc_parts['month'])
+        c.drawString(300, 655, roc_parts['day'])
+        c.drawString(350, 655, roc_parts['year'])
+        c.drawString(410, 655, roc_parts['month'])
+        c.drawString(455, 655, roc_parts['day'])
         
-        # 預計停車時間
+        # 預計停車時間 (修正縮排，移入函數內)
         try:
             t_temp = selected_time.replace("時", ":")
             t_clean = re.sub(r'[^\d:~]', '', t_temp)
@@ -140,6 +140,7 @@ with m_content:
             eh = parts[-2].strip() if len(parts) > 2 else ""
             em = parts[-1].strip() if len(parts) > 2 else ""
             
+            # 使用你調整過的座標
             c.drawString(190, 623, sh)
             c.drawString(245, 623, sm)
             c.drawString(310, 623, eh)
