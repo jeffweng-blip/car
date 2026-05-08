@@ -35,7 +35,6 @@ selected_company = st.selectbox("公司名稱", options=companies)
 
 def get_val(key):
     try: 
-        # 讀取 INI 中的值並清理空白
         val = config.get(selected_company, key).split(',')[0]
         return val.strip()
     except: 
@@ -48,7 +47,6 @@ plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
-# 在畫面上顯示資訊供確認
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -66,11 +64,10 @@ st.subheader("⏰ 停車時間設定")
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
-# 轉換民國日期格式
+# 取得日期部件
 roc_parts = get_roc_parts(selected_date)
-roc_date_range = f"{roc_parts['year']}/{roc_parts['month']}/{roc_parts['day']}"
 
-# 時間選單：自動轉換格式為 HH:MM
+# 時間選單
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
@@ -85,7 +82,7 @@ selected_time = st.selectbox("預計停車時間", options=display_times)
 # 填單日期 (自動抓取當天)
 today = get_roc_parts(datetime.now())
 
-# 側邊欄輔助模式 (需要微調座標時再開啟)
+# 側邊欄輔助模式
 show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 # --- PDF 套印邏輯 ---
@@ -130,21 +127,27 @@ def generate_overlay_pdf():
     c.drawString(150, 690, name)              
     c.drawString(350, 690, plate)             
     
-    # 預計停車日期範圍
-    c.drawString(160, 615, f"{roc_date_range} ~ {roc_date_range}")
+    # --- [修正] 預計停車日期：按圖片位置填入年、月、日，不加符號 ---
+    # 起始日期
+    c.drawString(205, 615, roc_parts['year'])   # 起始年
+    c.drawString(260, 615, roc_parts['month'])  # 起始月
+    c.drawString(305, 615, roc_parts['day'])    # 起始日
+    # 結束日期 (目前邏輯為同一天)
+    c.drawString(375, 615, roc_parts['year'])   # 結束年
+    c.drawString(430, 615, roc_parts['month'])  # 結束月
+    c.drawString(475, 615, roc_parts['day'])    # 結束日
     
     # 預計停車時間
     c.drawString(160, 580, selected_time)
     
-    # --- [座標修正] 申請原因：移回表格大框框內 ---
+    # 申請原因
     c.drawString(160, 555, reason)
 
     # 3. 簽署區 (底部)
     c.setFont(font_name, 12)
-    # --- [座標修正] 申請人：對齊「申請人：」標籤 ---
     c.drawString(410, 530, applicant) 
 
-    # 座標輔助線 (開發用)
+    # 座標輔助線
     if show_helper:
         c.setStrokeColorRGB(1, 0, 0)
         c.setFont("Helvetica", 8)
@@ -160,7 +163,7 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 生成與下載按鈕 ---
+# --- 下載按鈕 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
