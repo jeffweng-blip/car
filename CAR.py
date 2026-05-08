@@ -76,9 +76,9 @@ def generate_overlay_pdf():
     
     # 範例座標 (X, Y) - 請根據輔助模式看到的數字來修改這裡
     c.drawString(150, 725, selected_company)  # 公司名稱
-    c.drawString(410, 685, title)             # 職稱
-    c.drawString(160, 650, name)              # 姓名
-    c.drawString(410, 650, plate)             # 車號
+    c.drawString(350, 725, title)             # 職稱
+    c.drawString(150, 700, name)              # 姓名
+    c.drawString(350, 700, plate)             # 車號
     
     # 日期 (民國年格式)
     c.drawString(160, 615, roc_selected_date + " ~ " + roc_selected_date)
