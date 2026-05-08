@@ -150,7 +150,7 @@ def generate_overlay_pdf():
         c.drawString(275, 620, selected_time.replace(':', ' ').replace('~', ' '))
     
     # 3. 申請原因 (Y=555)
-    c.drawString(160, 555, reason)
+    c.drawString(160, 570, reason)
 
     # 4. 簽署區 (Y=530)
     c.setFont(font_name, 12)
