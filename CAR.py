@@ -141,16 +141,16 @@ def generate_overlay_pdf():
         em = parts[-1].strip() if len(parts) > 2 else "" # 結束分
         
         # 填入對應「時」、「分」前方的空格
-        c.drawString(190, 625, sh)  # 開始小時
-        c.drawString(245, 625, sm)  # 開始分鐘
-        c.drawString(310, 625, eh)  # 結束小時
-        c.drawString(375, 625, em)  # 結束分鐘
+        c.drawString(275, 620, sh)  # 開始小時
+        c.drawString(335, 620, sm)  # 開始分鐘
+        c.drawString(425, 620, eh)  # 結束小時
+        c.drawString(485, 620, em)  # 結束分鐘
     except:
         # 萬一格式異常，則退回原顯示方式
         c.drawString(275, 620, selected_time.replace(':', ' ').replace('~', ' '))
     
     # 3. 申請原因 (Y=555)
-    c.drawString(160, 570, reason)
+    c.drawString(160, 555, reason)
 
     # 4. 簽署區 (Y=530)
     c.setFont(font_name, 12)
