@@ -30,25 +30,21 @@ if 'Common' in companies: companies.remove('Common')
 st.title("🖨️ 神通申請單「套印」產生器")
 
 # --- UI 介面 ---
-# 1. 選擇公司
 selected_company = st.selectbox("公司名稱", options=companies)
 
 def get_val(key):
     try: 
-        # 讀取 INI 中的值，並進行簡單清理
         val = config.get(selected_company, key).split(',')[0]
         return val.strip()
     except: 
         return ""
 
-# 2. 自動抓取 INI 連動資訊
 title = get_val("Titles")
 name = get_val("Names")
 plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
-# 顯示連動資訊在畫面上 (供確認用)
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -63,14 +59,12 @@ st.divider()
 
 # 3. 日期與時間設定
 st.subheader("⏰ 停車時間設定")
-# 預設日期為 3 天後
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
-# 取得日期部件
 roc_parts = get_roc_parts(selected_date)
 
-# 時間選單：自動轉換格式為 HH:MM
+# 時間選單：自動將 INI 的時間轉為 HH:MM 格式
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
@@ -82,10 +76,7 @@ except:
 
 selected_time = st.selectbox("預計停車時間", options=display_times)
 
-# 填單日期 (自動抓取當天)
 today = get_roc_parts(datetime.now())
-
-# 側邊欄輔助模式 (需要精確調校座標時再開啟)
 show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 # --- PDF 套印邏輯 ---
@@ -118,37 +109,47 @@ def generate_overlay_pdf():
     # 繪製文字
     c.setFont(font_name, 12)
     
-    # 1. 申請部門與填單日期 (頂端)
+    # 1. 申請部門與填單日期 (Y=750)
     c.drawString(150, 750, "KBT")              
     c.drawString(360, 750, today['year'])      
     c.drawString(410, 750, today['month'])     
     c.drawString(450, 750, today['day'])       
 
-    # 2. 表格內容 (中間)
+    # 2. 表格內容 (中間部分)
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
     c.drawString(150, 690, name)              
     c.drawString(350, 690, plate)             
     
-    # --- [修正] 預計停車日期：依照圖片空格位置填入年、月、日 ---
-    # 起始日期
-    c.drawString(190, 655, roc_parts['year'])   # 起始年
-    c.drawString(245, 655, roc_parts['month'])  # 起始月
-    c.drawString(280, 655, roc_parts['day'])    # 起始日
-    # 結束日期 (目前預設與起始日相同)
-    c.drawString(350, 655, roc_parts['year'])   # 結束年
-    c.drawString(410, 655, roc_parts['month'])  # 結束月
-    c.drawString(460, 655, roc_parts['day'])    # 結束日
+    # 預計停車日期 (Y=655)
+    c.drawString(190, 655, roc_parts['year'])
+    c.drawString(245, 655, roc_parts['month'])
+    c.drawString(280, 655, roc_parts['day'])
+    c.drawString(350, 655, roc_parts['year'])
+    c.drawString(410, 655, roc_parts['month'])
+    c.drawString(460, 655, roc_parts['day'])
     
-    # 預計停車時間
-    c.drawString(160, 580, selected_time)
+    # --- [修正] 預計停車時間：拆解 HH:MM 並填入對應格子 (Y=620) ---
+    try:
+        # 將 "09:00 ~ 18:00" 拆開
+        start_t, end_t = selected_time.split('~')
+        sh, sm = start_t.strip().split(':')
+        eh, em = end_t.strip().split(':')
+        
+        # 依照底圖「時、分」的位置套印文字
+        c.drawString(275, 620, sh)  # 開始時
+        c.drawString(335, 620, sm)  # 開始分
+        c.drawString(425, 620, eh)  # 結束時
+        c.drawString(485, 620, em)  # 結束分
+    except:
+        # 萬一拆解失敗的備案
+        c.drawString(275, 620, selected_time)
     
-    # 申請原因
+    # 3. 申請原因 (Y=555)
     c.drawString(160, 555, reason)
 
-    # 3. 簽署區 (底部)
+    # 4. 簽署區 (Y=530)
     c.setFont(font_name, 12)
-    # 對齊底圖上的「申請人：」標籤位置
     c.drawString(410, 530, applicant) 
 
     # 座標輔助線
@@ -167,7 +168,7 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 下載按鈕 ---
+# --- 生成與下載 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
