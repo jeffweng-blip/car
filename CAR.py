@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 # --- 基礎設定 ---
-st.set_page_config(page_title="神通套印產生器", layout="wide")
+st.set_page_config(page_title="臨時停車申請單產生器", layout="wide")
 
 def get_roc_parts(date_obj):
     """取得民國年、月、日的數字"""
@@ -32,10 +32,11 @@ if 'Common' in companies: companies.remove('Common')
 m_left, m_content, _ = st.columns([1, 8, 1])
 
 with m_content:
-    # --- [修正] 縮小標題字體 (使用 markdown ## 替代 title) ---
-    st.markdown("## 🖨️ 神通申請單「套印」產生器")
+    # --- [修正] 修改標題文字與字體大小 (與下方子標題同級) ---
+    st.markdown("### 臨時停車申請單 產生器")
 
     # --- UI 介面 ---
+    # 選擇公司 (寬度 1/3)
     col_company, _ = st.columns([1, 2])
     with col_company:
         selected_company = st.selectbox("公司名稱", options=companies)
@@ -54,7 +55,7 @@ with m_content:
     reason = get_val("Reasons")
     applicant = get_val("Applicants")
 
-    # --- [修正] 顯示詳細資訊：改為單一欄位垂直排列，移至左側 ---
+    # 顯示詳細資訊：垂直排列
     st.markdown("### 📋 申請單詳細資訊")
     st.write(f"**職稱：** {title}")
     st.write(f"**姓名：** {name}")
@@ -67,12 +68,14 @@ with m_content:
     # 3. 日期與時間設定
     st.subheader("⏰ 停車時間設定")
     
+    # 預計停車日期 (寬度 1/3)
     col_date, _ = st.columns([1, 2])
     with col_date:
         default_date = datetime.now() + timedelta(days=3)
         selected_date = st.date_input("預計停車日期", value=default_date)
         roc_parts = get_roc_parts(selected_date)
 
+    # 時間選單 (寬度 1/3)
     col_time, _ = st.columns([1, 2])
     with col_time:
         try: 
@@ -84,7 +87,7 @@ with m_content:
     today = get_roc_parts(datetime.now())
     show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
-    # --- PDF 套印邏輯 (字體維持 10 級) ---
+    # --- PDF 套印邏輯 ---
     def generate_overlay_pdf():
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
@@ -105,7 +108,7 @@ with m_content:
         if os.path.exists(bg_path):
             c.drawImage(bg_path, 0, 0, width=w_a4, height=h_a4)
 
-        # 套印字體大小
+        # 套印字體大小 10
         c.setFont(font_name, 10)
         
         # 1. 申請部門與填單日期
@@ -120,13 +123,13 @@ with m_content:
         c.drawString(150, 690, name)              
         c.drawString(350, 690, plate)             
         
-        # 預計停車日期
-        c.drawString(190, 655, roc_parts['year'])
-        c.drawString(245, 655, roc_parts['month'])
-        c.drawString(280, 655, roc_parts['day'])
-        c.drawString(350, 655, roc_parts['year'])
-        c.drawString(410, 655, roc_parts['month'])
-        c.drawString(460, 655, roc_parts['day'])
+    # 預計停車日期 (Y=655)
+    c.drawString(190, 655, roc_parts['year'])
+    c.drawString(245, 655, roc_parts['month'])
+    c.drawString(300, 655, roc_parts['day'])
+    c.drawString(350, 655, roc_parts['year'])
+    c.drawString(410, 655, roc_parts['month'])
+    c.drawString(455, 655, roc_parts['day'])
         
         # 預計停車時間
         try:
@@ -137,10 +140,10 @@ with m_content:
             eh = parts[-2].strip() if len(parts) > 2 else ""
             em = parts[-1].strip() if len(parts) > 2 else ""
             
-            c.drawString(275, 620, sh)
-            c.drawString(335, 620, sm)
-            c.drawString(425, 620, eh)
-            c.drawString(485, 620, em)
+            c.drawString(190, 623, sh)
+            c.drawString(245, 623, sm)
+            c.drawString(310, 623, eh)
+            c.drawString(365, 623, em)
         except:
             c.drawString(275, 620, selected_time)
         
@@ -165,7 +168,7 @@ with m_content:
         buffer.seek(0)
         return buffer
 
-    # --- 下載按鈕 ---
+    # --- 下載按鈕 (寬度 1/3) ---
     st.divider()
     col_btn, _ = st.columns([1, 2])
     with col_btn:
