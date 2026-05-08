@@ -146,7 +146,6 @@ def generate_overlay_pdf():
 
     # 3. 簽署區 (底部)
     c.setFont(font_name, 12)
-    c.drawString(60, 440, "部級主管：") # 座標需視底圖調整
     c.drawRightString(380, 540, f"申請人：{applicant}")
 
     # 座標輔助線
