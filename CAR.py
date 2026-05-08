@@ -48,7 +48,7 @@ plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
-# 顯示連動資訊在畫面上 (供確認)
+# 顯示連動資訊在畫面上 (確認用)
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -71,10 +71,9 @@ selected_date = st.date_input("預計停車日期", value=default_date)
 roc_parts = get_roc_parts(selected_date)
 roc_date_range = f"{roc_parts['year']}/{roc_parts['month']}/{roc_parts['day']}"
 
-# 時間選單：手動整理為 HH:MM 格式
+# 時間選單：自動將 INI 的「時/分」轉換為 HH:MM 格式
 try: 
     raw_times = config.get('Common', 'Times').split(',')
-    # 清理時間字串，只留下數字與冒號 (例如 09:00 ~ 18:00)
     display_times = []
     for t in raw_times:
         clean_t = t.replace("時", ":").replace("分", "").replace(" ", "")
@@ -120,35 +119,35 @@ def generate_overlay_pdf():
     # 繪製文字
     c.setFont(font_name, 12)
     
-    # 1. 申請部門與填單日期 (頂端)
-    c.drawString(150, 750, "KBT")             
+    # 1. 申請部門與填單日期 (頂端) - 依據你提供的 Y=750 座標
+    c.drawString(150, 750, "KBT")              
     c.drawString(360, 750, today['year'])      
     c.drawString(410, 750, today['month'])     
     c.drawString(450, 750, today['day'])       
 
-    # 2. 表格內容 (中間)
+    # 2. 表格內容 (中間) - 依據你提供的座標
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
     c.drawString(150, 690, name)              
-    c.drawString(350, 690, plate)            
+    c.drawString(350, 690, plate)             
     
-    # 日期範圍
+    # 預計停車日期範圍
     c.drawString(160, 615, f"{roc_date_range} ~ {roc_date_range}")
     
-    # 時間 (HH:MM ~ HH:MM)
+    # 預計停車時間
     c.drawString(160, 580, selected_time)
     
-    # 申請原因 (直列)
+    # 申請原因 (直列顯示)
     reason_y = 520
     for char in reason:
         c.drawCentredString(75, reason_y, char)
         reason_y -= 15
 
-    # 3. 簽署區 (底部)
+    # 3. 簽署區 (底部) - 修正語法錯誤
     c.setFont(font_name, 12)
-    c.drawRightString(380, 540, {applicant})
+    c.drawRightString(380, 540, applicant)
 
-    # 座標輔助線
+    # 座標輔助線 (開發模式用)
     if show_helper:
         c.setStrokeColorRGB(1, 0, 0)
         c.setFont("Helvetica", 8)
