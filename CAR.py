@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 # --- 基礎設定 ---
-st.set_page_config(page_title="神通套印產生器", layout="wide") # wide 模式以便處理縮排
+st.set_page_config(page_title="神通套印產生器", layout="wide")
 
 def get_roc_parts(date_obj):
     """取得民國年、月、日的數字"""
@@ -29,14 +29,13 @@ companies = config.sections()
 if 'Common' in companies: companies.remove('Common')
 
 # --- 版面縮排設定 ---
-# 使用 [1, 8, 1] 比例，左側 1 為縮排空間，中間 8 為主內容
 m_left, m_content, _ = st.columns([1, 8, 1])
 
 with m_content:
-    st.title("🖨️ 神通申請單「套印」產生器")
+    # --- [修正] 縮小標題字體 (使用 markdown ## 替代 title) ---
+    st.markdown("## 🖨️ 神通申請單「套印」產生器")
 
     # --- UI 介面 ---
-    # 1. 選擇公司 (寬度 1/3)
     col_company, _ = st.columns([1, 2])
     with col_company:
         selected_company = st.selectbox("公司名稱", options=companies)
@@ -55,30 +54,25 @@ with m_content:
     reason = get_val("Reasons")
     applicant = get_val("Applicants")
 
-    # 顯示詳細資訊
+    # --- [修正] 顯示詳細資訊：改為單一欄位垂直排列，移至左側 ---
     st.markdown("### 📋 申請單詳細資訊")
-    col_info1, col_info2 = st.columns(2)
-    with col_info1:
-        st.write(f"**職稱：** {title}")
-        st.write(f"**姓名：** {name}")
-        st.write(f"**車號：** {plate}")
-    with col_info2:
-        st.write(f"**申請原因：** {reason}")
-        st.write(f"**申請人：** {applicant}")
+    st.write(f"**職稱：** {title}")
+    st.write(f"**姓名：** {name}")
+    st.write(f"**車號：** {plate}")
+    st.write(f"**申請原因：** {reason}")
+    st.write(f"**申請人：** {applicant}")
 
     st.divider()
 
     # 3. 日期與時間設定
     st.subheader("⏰ 停車時間設定")
     
-    # 預計停車日期 (寬度 1/3)
     col_date, _ = st.columns([1, 2])
     with col_date:
         default_date = datetime.now() + timedelta(days=3)
         selected_date = st.date_input("預計停車日期", value=default_date)
         roc_parts = get_roc_parts(selected_date)
 
-    # 時間選單 (寬度 1/3)
     col_time, _ = st.columns([1, 2])
     with col_time:
         try: 
@@ -87,40 +81,31 @@ with m_content:
             display_times = ["09:00 ~ 18:00"]
         selected_time = st.selectbox("預計停車時間", options=display_times)
 
-    # 填單日期 (自動抓取)
     today = get_roc_parts(datetime.now())
-
-    # 側邊欄輔助模式
     show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
-    # --- PDF 套印邏輯 ---
+    # --- PDF 套印邏輯 (字體維持 10 級) ---
     def generate_overlay_pdf():
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
         w_a4, h_a4 = A4
 
-        # 註冊字型
         font_name = "MSJH"
-        font_bold_name = "MSJH-Bold"
         local_font = "msjh.ttc"
-        local_font_bold = "msjhbd.ttc"
 
         if os.path.exists(local_font):
             pdfmetrics.registerFont(TTFont(font_name, local_font))
-            pdfmetrics.registerFont(TTFont(font_bold_name, local_font_bold))
         else:
             try:
                 pdfmetrics.registerFont(TTFont(font_name, "C:/Windows/Fonts/msjh.ttc"))
-                pdfmetrics.registerFont(TTFont(font_bold_name, "C:/Windows/Fonts/msjhbd.ttc"))
             except:
                 font_name = "Helvetica"
 
-        # 畫入底圖
         bg_path = "template.png"
         if os.path.exists(bg_path):
             c.drawImage(bg_path, 0, 0, width=w_a4, height=h_a4)
 
-        # 繪製文字 (將字體縮小至 10 級)
+        # 套印字體大小
         c.setFont(font_name, 10)
         
         # 1. 申請部門與填單日期
@@ -135,7 +120,7 @@ with m_content:
         c.drawString(150, 690, name)              
         c.drawString(350, 690, plate)             
         
-        # 預計停車日期 (Y=655)
+        # 預計停車日期
         c.drawString(190, 655, roc_parts['year'])
         c.drawString(245, 655, roc_parts['month'])
         c.drawString(280, 655, roc_parts['day'])
@@ -143,7 +128,7 @@ with m_content:
         c.drawString(410, 655, roc_parts['month'])
         c.drawString(460, 655, roc_parts['day'])
         
-        # 預計停車時間 (Y=620)
+        # 預計停車時間
         try:
             t_temp = selected_time.replace("時", ":")
             t_clean = re.sub(r'[^\d:~]', '', t_temp)
@@ -162,10 +147,9 @@ with m_content:
         # 3. 申請原因
         c.drawString(160, 555, reason)
 
-        # 4. 簽署區 (同樣維持 10 級字體)
+        # 4. 簽署區
         c.drawString(410, 530, applicant) 
 
-        # 座標輔助
         if show_helper:
             c.setStrokeColorRGB(1, 0, 0)
             c.setFont("Helvetica", 8)
@@ -181,7 +165,7 @@ with m_content:
         buffer.seek(0)
         return buffer
 
-    # --- 生成與下載按鈕 (寬度 1/3) ---
+    # --- 下載按鈕 ---
     st.divider()
     col_btn, _ = st.columns([1, 2])
     with col_btn:
