@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 # --- 基礎設定 ---
-st.set_page_config(page_title="神通套印產生器", layout="wide") # 改為 wide 模式以便處理縮排
+st.set_page_config(page_title="神通套印產生器", layout="wide") # wide 模式以便處理縮排
 
 def get_roc_parts(date_obj):
     """取得民國年、月、日的數字"""
@@ -120,8 +120,8 @@ with m_content:
         if os.path.exists(bg_path):
             c.drawImage(bg_path, 0, 0, width=w_a4, height=h_a4)
 
-        # 繪製文字
-        c.setFont(font_name, 12)
+        # 繪製文字 (將字體縮小至 10 級)
+        c.setFont(font_name, 10)
         
         # 1. 申請部門與填單日期
         c.drawString(150, 750, "KBT")              
@@ -162,8 +162,7 @@ with m_content:
         # 3. 申請原因
         c.drawString(160, 555, reason)
 
-        # 4. 簽署區
-        c.setFont(font_name, 12)
+        # 4. 簽署區 (同樣維持 10 級字體)
         c.drawString(410, 530, applicant) 
 
         # 座標輔助
