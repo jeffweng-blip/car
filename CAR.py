@@ -3,7 +3,7 @@ import configparser
 from datetime import datetime, timedelta
 import io
 import os
-import re  # 導入正則表達式套件
+import re  # 導入正則表達式用於過濾文字
 
 # PDF 生成套件
 from reportlab.pdfgen import canvas
@@ -31,6 +31,7 @@ if 'Common' in companies: companies.remove('Common')
 st.title("🖨️ 神通申請單「套印」產生器")
 
 # --- UI 介面 ---
+# 1. 選擇公司
 selected_company = st.selectbox("公司名稱", options=companies)
 
 def get_val(key):
@@ -40,12 +41,14 @@ def get_val(key):
     except: 
         return ""
 
+# 2. 自動抓取 INI 連動資訊
 title = get_val("Titles")
 name = get_val("Names")
 plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
+# 顯示連動資訊在畫面上
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -63,25 +66,21 @@ st.subheader("⏰ 停車時間設定")
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
+# 取得日期部件
 roc_parts = get_roc_parts(selected_date)
 
-# --- [更新] 時間選單處理：過濾掉所有中文字與括號 ---
+# --- [更新] 時間選單：直接呈現 INI 原始內容 (包含中文字) ---
 try: 
-    raw_times = config.get('Common', 'Times').split(',')
-    display_times = []
-    for t in raw_times:
-        # 1. 先把「時」換成冒號
-        temp_t = t.replace("時", ":")
-        # 2. 使用正則表達式，只留下數字(0-9)、冒號(:)、波浪號(~)、空格( )
-        # 這會移除所有中文字(如「分」、「全日」)以及括號
-        clean_t = re.sub(r'[^\d:~ ]', '', temp_t)
-        display_times.append(clean_t.strip())
+    display_times = config.get('Common', 'Times').split(',')
 except: 
     display_times = ["09:00 ~ 18:00"]
 
 selected_time = st.selectbox("預計停車時間", options=display_times)
 
+# 填單日期 (自動抓取當天)
 today = get_roc_parts(datetime.now())
+
+# 側邊欄輔助模式
 show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 # --- PDF 套印邏輯 ---
@@ -134,19 +133,27 @@ def generate_overlay_pdf():
     c.drawString(410, 655, roc_parts['month'])
     c.drawString(460, 655, roc_parts['day'])
     
-    # --- 預計停車時間：拆解 HH:MM (Y=620) ---
+    # --- [關鍵更新] 預計停車時間：套印時才過濾掉所有中文字與符號 ---
     try:
-        parts = selected_time.replace('~', ':').split(':')
+        # 1. 先將「時」替換為冒號，保留結構
+        t_temp = selected_time.replace("時", ":")
+        # 2. 只留下數字、冒號、波浪號，其餘(分、全日、括號、空格)全部刪除
+        t_clean = re.sub(r'[^\d:~]', '', t_temp)
+        # 3. 進行拆解
+        parts = t_clean.replace('~', ':').split(':')
+        
         sh = parts[0].strip() # 開始時
         sm = parts[1].strip() # 開始分
         eh = parts[-2].strip() if len(parts) > 2 else "" # 結束時
         em = parts[-1].strip() if len(parts) > 2 else "" # 結束分
         
+        # 填入時、分位置 (Y=620)
         c.drawString(275, 620, sh)
         c.drawString(335, 620, sm)
         c.drawString(425, 620, eh)
         c.drawString(485, 620, em)
     except:
+        # 萬一拆解失敗，直接印出原始字串 (保險機制)
         c.drawString(275, 620, selected_time)
     
     # 3. 申請原因 (Y=555)
@@ -172,7 +179,7 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 下載區 ---
+# --- 下載按鈕 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
