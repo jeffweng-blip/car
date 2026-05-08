@@ -141,10 +141,10 @@ def generate_overlay_pdf():
         em = parts[-1].strip() if len(parts) > 2 else "" # 結束分
         
         # 填入對應「時」、「分」前方的空格
-        c.drawString(190, 620, sh)  # 開始小時
-        c.drawString(245, 620, sm)  # 開始分鐘
-        c.drawString(325, 620, eh)  # 結束小時
-        c.drawString(350, 620, em)  # 結束分鐘
+        c.drawString(190, 625, sh)  # 開始小時
+        c.drawString(245, 625, sm)  # 開始分鐘
+        c.drawString(310, 625, eh)  # 結束小時
+        c.drawString(375, 625, em)  # 結束分鐘
     except:
         # 萬一格式異常，則退回原顯示方式
         c.drawString(275, 620, selected_time.replace(':', ' ').replace('~', ' '))
