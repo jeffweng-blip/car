@@ -124,12 +124,12 @@ with m_content:
         c.drawString(350, 690, plate)             
         
         # 預計停車日期 (修正縮排，移入函數內)
-        c.drawString(190, 655, roc_parts['year'])
-        c.drawString(245, 655, roc_parts['month'])
-        c.drawString(300, 655, roc_parts['day'])
-        c.drawString(350, 655, roc_parts['year'])
-        c.drawString(410, 655, roc_parts['month'])
-        c.drawString(455, 655, roc_parts['day'])
+        c.drawString(190, 657, roc_parts['year'])
+        c.drawString(245, 657, roc_parts['month'])
+        c.drawString(290, 657, roc_parts['day'])
+        c.drawString(350, 657, roc_parts['year'])
+        c.drawString(410, 657, roc_parts['month'])
+        c.drawString(455, 657, roc_parts['day'])
         
         # 預計停車時間 (修正縮排，移入函數內)
         try:
@@ -149,7 +149,7 @@ with m_content:
             c.drawString(275, 620, selected_time)
         
         # 3. 申請原因
-        c.drawString(160, 555, reason)
+        c.drawString(160, 575, reason)
 
         # 4. 簽署區
         c.drawString(410, 530, applicant) 
