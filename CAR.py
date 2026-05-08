@@ -145,7 +145,7 @@ def generate_overlay_pdf():
 
     # 3. 簽署區 (底部) - 修正語法錯誤
     c.setFont(font_name, 12)
-    c.drawRightString(390, 530, applicant)
+    c.drawRightString(400, 530, applicant)
 
     # 座標輔助線 (開發模式用)
     if show_helper:
