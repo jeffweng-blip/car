@@ -129,13 +129,13 @@ def generate_overlay_pdf():
     
     # --- [修正] 預計停車日期：按圖片位置填入年、月、日，不加符號 ---
  # 起始日期
-    c.drawString(190, 645, roc_parts['year'])   # 起始年
-    c.drawString(245, 645, roc_parts['month'])  # 起始月
-    c.drawString(280, 645, roc_parts['day'])    # 起始日
+    c.drawString(190, 630, roc_parts['year'])   # 起始年
+    c.drawString(245, 630, roc_parts['month'])  # 起始月
+    c.drawString(280, 630, roc_parts['day'])    # 起始日
     # 結束日期 (目前邏輯為同一天)
-    c.drawString(350, 645, roc_parts['year'])   # 結束年
-    c.drawString(410, 645, roc_parts['month'])  # 結束月
-    c.drawString(460, 645, roc_parts['day'])    # 結束日
+    c.drawString(350, 630, roc_parts['year'])   # 結束年
+    c.drawString(410, 630, roc_parts['month'])  # 結束月
+    c.drawString(460, 630, roc_parts['day'])    # 結束日
     
     # 預計停車時間
     c.drawString(160, 580, selected_time)
