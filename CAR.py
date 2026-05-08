@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import io
 import os
 
-# PDF 生成套件 (僅需 reportlab)
+# PDF 生成套件
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
@@ -30,36 +30,65 @@ if 'Common' in companies: companies.remove('Common')
 st.title("🖨️ 神通申請單「套印」產生器")
 
 # --- UI 介面 ---
+# 1. 選擇公司
 selected_company = st.selectbox("公司名稱", options=companies)
-# 側邊欄：座標輔助模式
-show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 def get_val(key):
-    try: return config.get(selected_company, key).split(',')[0]
-    except: return ""
+    try: 
+        # 讀取 INI 中的值，並進行簡單清理
+        val = config.get(selected_company, key).split(',')[0]
+        return val.strip()
+    except: 
+        return ""
 
+# 2. 自動抓取 INI 連動資訊
 title = get_val("Titles")
 name = get_val("Names")
 plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
-# 預計停車日期 (使用 Streamlit 內建選擇器，不需要 tkcalendar)
+# 顯示連動資訊在畫面上 (供確認)
+st.markdown("### 📋 申請單詳細資訊")
+col1, col2 = st.columns(2)
+with col1:
+    st.write(f"**職稱：** {title}")
+    st.write(f"**姓名：** {name}")
+    st.write(f"**車號：** {plate}")
+with col2:
+    st.write(f"**申請原因：** {reason}")
+    st.write(f"**申請人：** {applicant}")
+
+st.divider()
+
+# 3. 日期與時間設定
+st.subheader("⏰ 停車時間設定")
+# 預設日期為 3 天後
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
-# 轉換日期格式
-roc_date_parts = get_roc_parts(selected_date)
-roc_date_range = f"{roc_date_parts['year']}/{roc_date_parts['month']}/{roc_date_parts['day']}"
+# 轉換民國日期格式
+roc_parts = get_roc_parts(selected_date)
+roc_date_range = f"{roc_parts['year']}/{roc_parts['month']}/{roc_parts['day']}"
 
+# 時間選單：手動整理為 HH:MM 格式
 try: 
-    common_times = config.get('Common', 'Times').split(',')
+    raw_times = config.get('Common', 'Times').split(',')
+    # 清理時間字串，只留下數字與冒號 (例如 09:00 ~ 18:00)
+    display_times = []
+    for t in raw_times:
+        clean_t = t.replace("時", ":").replace("分", "").replace(" ", "")
+        display_times.append(clean_t)
 except: 
-    common_times = ["09:00~18:00"]
-selected_time = st.selectbox("預計停車時間", options=common_times)
+    display_times = ["09:00 ~ 18:00"]
+
+selected_time = st.selectbox("預計停車時間", options=display_times)
 
 # 填單日期 (自動抓取當天)
 today = get_roc_parts(datetime.now())
+
+# 側邊欄輔助模式
+show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 # --- PDF 套印邏輯 ---
 def generate_overlay_pdf():
@@ -67,7 +96,7 @@ def generate_overlay_pdf():
     c = canvas.Canvas(buffer, pagesize=A4)
     w_a4, h_a4 = A4
 
-    # 1. 註冊字型
+    # 註冊字型
     font_name = "MSJH"
     font_bold_name = "MSJH-Bold"
     local_font = "msjh.ttc"
@@ -77,33 +106,36 @@ def generate_overlay_pdf():
         pdfmetrics.registerFont(TTFont(font_name, local_font))
         pdfmetrics.registerFont(TTFont(font_bold_name, local_font_bold))
     else:
-        # 本地測試路徑
         try:
             pdfmetrics.registerFont(TTFont(font_name, "C:/Windows/Fonts/msjh.ttc"))
             pdfmetrics.registerFont(TTFont(font_bold_name, "C:/Windows/Fonts/msjhbd.ttc"))
         except:
-            font_name = "Helvetica" # 備用
+            font_name = "Helvetica"
 
-    # 2. 畫入底圖
+    # 畫入底圖
     bg_path = "template.png"
     if os.path.exists(bg_path):
         c.drawImage(bg_path, 0, 0, width=w_a4, height=h_a4)
 
-    # 3. 繪製文字
+    # 繪製文字
     c.setFont(font_name, 12)
     
-    # 申請部門與填單日期
-    c.drawString(150, 750, "KBT")             
-    c.drawString(360, 750, today['year'])      
-    c.drawString(410, 750, today['month'])     
-    c.drawString(450, 750, today['day'])       
+    # 1. 申請部門與填單日期 (頂端)
+    c.drawString(100, 715, "KBT")             
+    c.drawString(340, 715, today['year'])      
+    c.drawString(410, 715, today['month'])     
+    c.drawString(460, 715, today['day'])       
 
-    # 表格內容
-    c.drawString(150, 725, selected_company)  
-    c.drawString(350, 725, title)             
-    c.drawString(150, 690, name)              
-    c.drawString(350, 690, plate)             
+    # 2. 表格內容 (中間)
+    c.drawString(160, 685, selected_company)  
+    c.drawString(410, 685, title)             
+    c.drawString(160, 650, name)              
+    c.drawString(410, 650, plate)             
+    
+    # 日期範圍
     c.drawString(160, 615, f"{roc_date_range} ~ {roc_date_range}")
+    
+    # 時間 (HH:MM ~ HH:MM)
     c.drawString(160, 580, selected_time)
     
     # 申請原因 (直列)
@@ -111,6 +143,11 @@ def generate_overlay_pdf():
     for char in reason:
         c.drawCentredString(75, reason_y, char)
         reason_y -= 15
+
+    # 3. 簽署區 (底部)
+    c.setFont(font_name, 12)
+    c.drawString(60, 440, "部級主管：") # 座標需視底圖調整
+    c.drawRightString(540, 440, f"申請人：{applicant}")
 
     # 座標輔助線
     if show_helper:
@@ -128,11 +165,11 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 下載區 ---
+# --- 下載按鈕 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
-    label="📥 點我下載套印 PDF",
+    label="📥 生成並下載套印 PDF",
     data=pdf_output,
     file_name=f"停車申請單_{name}.pdf",
     mime="application/pdf",
