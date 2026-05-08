@@ -13,9 +13,10 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 
 # --- 基礎設定 ---
-st.set_page_config(page_title="神通資科-停車申請單產生器", layout="centered")
+st.set_page_config(page_title="神通企業總部-停車申請單產生器", layout="centered")
 
 def get_roc_date_str(date_obj):
+    """將 datetime 轉為 民國年格式字串"""
     roc_year = date_obj.year - 1911
     return f"{roc_year} 年 {date_obj.strftime('%m 月 %d 日')}"
 
@@ -26,7 +27,7 @@ companies = config.sections()
 if 'Common' in companies:
     companies.remove('Common')
 
-st.title("🚗 臨時停車申請單產生器")
+st.title("🚗 停車申請單產生器 (新版格式)")
 
 # 2. 介面輸入區
 selected_company = st.selectbox("公司名稱", options=companies)
@@ -54,6 +55,7 @@ with col2:
 
 st.divider()
 st.subheader("日期與時間設定")
+# 預設日期為 3 天後
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 roc_selected_date = get_roc_date_str(selected_date)
@@ -72,37 +74,38 @@ def generate_pdf_buffer():
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
-    # --- 關鍵修正：路徑優先尋找當前目錄下的字型檔 ---
     font_name = "MSJH"
     font_bold_name = "MSJH-Bold"
     
-    # 這裡的檔名要跟上傳到 GitHub 的檔名完全一致
+    # 判斷字型路徑
     local_font = "msjh.ttc"
     local_font_bold = "msjhbd.ttc"
     
-    # 判斷環境，自動切換字型路徑
     if os.path.exists(local_font):
         pdfmetrics.registerFont(TTFont(font_name, local_font))
         pdfmetrics.registerFont(TTFont(font_bold_name, local_font_bold))
     else:
-        # 回退到 Windows 路徑 (本地測試用)
+        # 本地 Windows 測試路徑
         pdfmetrics.registerFont(TTFont(font_name, "C:/Windows/Fonts/msjh.ttc"))
         pdfmetrics.registerFont(TTFont(font_bold_name, "C:/Windows/Fonts/msjhbd.ttc"))
 
     t_x, t_top_y, t_w = 57.5, height - 95, 480
     row_hs = [35, 35, 35, 35, 85]
 
-    c.setFont(font_name, 22)
-    c.drawCentredString(width/2, height - 60, "神通資科 臨時停車申請單")
+    # 1. 標題 
+    c.setFont(font_name, 20)
+    c.drawCentredString(width/2, height - 60, "神通企業總部大樓臨時停車申請單")
     
+    # 2. 表頭 (申請部門、填單日期) [cite: 2, 4]
     c.setFont(font_name, 11)
-    c.drawString(t_x, t_top_y + 8, "申請部門：KBT")
+    c.drawString(t_x, t_top_y + 8, "申請部門：")
     c.drawRightString(t_x + t_w, t_top_y + 8, f"填單日期： {today_roc}")
 
+    # 3. 表格數據 
     full_date_range = f"{roc_selected_date} ~ {roc_selected_date}"
     data = [
         ['公司', selected_company, '職稱', title],
-        ['姓名', name, '車号', plate],
+        ['姓名', name, '車號', plate],
         ['預計停車日期', full_date_range, '', ''],
         ['預計停車時間', selected_time, '', ''],
         ['申請\n原因', reason, '', '']
@@ -115,23 +118,33 @@ def generate_pdf_buffer():
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('SPAN', (1, 2), (3, 2)), ('SPAN', (1, 3), (3, 3)), ('SPAN', (1, 4), (3, 4)),
+        ('SPAN', (1, 2), (3, 2)), 
+        ('SPAN', (1, 3), (3, 3)), 
+        ('SPAN', (1, 4), (3, 4)),
         ('ALIGN', (1, 4), (1, 4), 'LEFT'),
         ('LEFTPADDING', (1, 4), (1, 4), 12),
     ]))
     table.wrapOn(c, width, height)
     table.drawOn(c, t_x, t_top_y - sum(row_hs))
 
+    # 4. 雙線外框
     c.setLineWidth(0.8)
     c.rect(t_x, t_top_y - sum(row_hs), t_w, sum(row_hs))
     c.rect(t_x - 2, t_top_y - sum(row_hs) - 2, t_w + 4, sum(row_hs) + 4)
 
+    # 5. 頁尾簽署區 [cite: 5, 6, 7]
     y_f = t_top_y - sum(row_hs) - 25
     c.setFont(font_name, 11)
-    c.drawString(t_x, y_f, "處級主管：")
+    c.drawString(t_x, y_f, "部級主管：")
+    c.drawCentredString(width/2, y_f, "總務部：")
     c.drawRightString(t_x + t_w, y_f, f"申請人：{applicant}")
+    
+    # 6. 表單編號與警語 [cite: 8, 9]
+    c.setFont(font_name, 9)
+    c.drawString(t_x, y_f - 60, "GEP-99-4-12-A")
+    
     c.setFont(font_bold_name, 10.5)
-    c.drawCentredString(width/2, y_f - 90, "*本單須經處級(含)以上主管及總務部主管簽字後，送警衛室憑單放行*")
+    c.drawCentredString(width/2, y_f - 90, "*本單須經部級(含)以上主管及總務部簽字後，送警衛室憑單放行*")
 
     c.showPage()
     c.save()
@@ -142,7 +155,7 @@ def generate_pdf_buffer():
 st.divider()
 pdf_data = generate_pdf_buffer()
 st.download_button(
-    label="📥 下載 PDF 申請單",
+    label="📥 下載 PDF 申請單 (新格式)",
     data=pdf_data,
     file_name=f"停車申請單_{name}.pdf",
     mime="application/pdf",
