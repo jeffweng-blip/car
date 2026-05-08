@@ -121,16 +121,16 @@ def generate_overlay_pdf():
     c.setFont(font_name, 12)
     
     # 1. 申請部門與填單日期 (頂端)
-    c.drawString(100, 715, "KBT")             
-    c.drawString(340, 715, today['year'])      
-    c.drawString(410, 715, today['month'])     
-    c.drawString(460, 715, today['day'])       
+    c.drawString(150, 750, "KBT")             
+    c.drawString(360, 750, today['year'])      
+    c.drawString(410, 750, today['month'])     
+    c.drawString(450, 750, today['day'])       
 
     # 2. 表格內容 (中間)
-    c.drawString(160, 685, selected_company)  
-    c.drawString(410, 685, title)             
-    c.drawString(160, 650, name)              
-    c.drawString(410, 650, plate)             
+    c.drawString(150, 725, selected_company)  
+    c.drawString(350, 725, title)             
+    c.drawString(150, 690, name)              
+    c.drawString(350, 690, plate)            
     
     # 日期範圍
     c.drawString(160, 615, f"{roc_date_range} ~ {roc_date_range}")
