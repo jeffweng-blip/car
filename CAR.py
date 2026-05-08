@@ -30,25 +30,22 @@ if 'Common' in companies: companies.remove('Common')
 st.title("🖨️ 神通申請單「套印」產生器")
 
 # --- UI 介面 ---
-# 1. 選擇公司
 selected_company = st.selectbox("公司名稱", options=companies)
 
 def get_val(key):
     try: 
-        # 讀取 INI 中的值，並進行簡單清理
         val = config.get(selected_company, key).split(',')[0]
         return val.strip()
     except: 
         return ""
 
-# 2. 自動抓取 INI 連動資訊
+# 自動抓取 INI 連動資訊
 title = get_val("Titles")
 name = get_val("Names")
 plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
-# 顯示連動資訊在畫面上 (確認用)
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -61,17 +58,14 @@ with col2:
 
 st.divider()
 
-# 3. 日期與時間設定
+# 日期與時間設定
 st.subheader("⏰ 停車時間設定")
-# 預設日期為 3 天後
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
-# 轉換民國日期格式
 roc_parts = get_roc_parts(selected_date)
 roc_date_range = f"{roc_parts['year']}/{roc_parts['month']}/{roc_parts['day']}"
 
-# 時間選單：自動將 INI 的「時/分」轉換為 HH:MM 格式
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
@@ -119,13 +113,13 @@ def generate_overlay_pdf():
     # 繪製文字
     c.setFont(font_name, 12)
     
-    # 1. 申請部門與填單日期 (頂端) - 依據你提供的 Y=750 座標
+    # 1. 申請部門與填單日期 (頂端)
     c.drawString(150, 750, "KBT")              
     c.drawString(360, 750, today['year'])      
     c.drawString(410, 750, today['month'])     
     c.drawString(450, 750, today['day'])       
 
-    # 2. 表格內容 (中間) - 依據你提供的座標
+    # 2. 表格內容 (中間)
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
     c.drawString(150, 690, name)              
@@ -137,17 +131,14 @@ def generate_overlay_pdf():
     # 預計停車時間
     c.drawString(160, 580, selected_time)
     
-    # 申請原因 (直列顯示)
-    reason_y = 520
-    for char in reason:
-        c.drawCentredString(75, reason_y, char)
-        reason_y -= 15
+    # --- [更新] 申請原因座標設定為 150, 530 ---
+    c.drawString(150, 530, reason)
 
-    # 3. 簽署區 (底部) - 修正語法錯誤
+    # 3. 簽署區 (底部) - 為了避開申請原因，下移至 480
     c.setFont(font_name, 12)
-    c.drawRightString(500, 530, applicant)
+    c.drawRightString(500, 480, applicant)
 
-    # 座標輔助線 (開發模式用)
+    # 座標輔助線
     if show_helper:
         c.setStrokeColorRGB(1, 0, 0)
         c.setFont("Helvetica", 8)
