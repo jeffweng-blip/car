@@ -64,11 +64,12 @@ selected_date = st.date_input("預計停車日期", value=default_date)
 
 roc_parts = get_roc_parts(selected_date)
 
-# 時間選單：自動將 INI 的時間轉為 HH:MM 格式
+# 時間選單：整理為 HH:MM 格式
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
     for t in raw_times:
+        # 去除中文，統一轉為 HH:MM ~ HH:MM
         clean_t = t.replace("時", ":").replace("分", "").replace(" ", "")
         display_times.append(clean_t)
 except: 
@@ -115,7 +116,7 @@ def generate_overlay_pdf():
     c.drawString(410, 750, today['month'])     
     c.drawString(450, 750, today['day'])       
 
-    # 2. 表格內容 (中間部分)
+    # 2. 表格內容
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
     c.drawString(150, 690, name)              
@@ -129,21 +130,24 @@ def generate_overlay_pdf():
     c.drawString(410, 655, roc_parts['month'])
     c.drawString(460, 655, roc_parts['day'])
     
-    # --- [修正] 預計停車時間：拆解 HH:MM 並填入對應格子 (Y=620) ---
+    # --- [更新] 預計停車時間：拆解並精確對齊時、分位置 (Y=620) ---
     try:
-        # 將 "09:00 ~ 18:00" 拆開
-        start_t, end_t = selected_time.split('~')
-        sh, sm = start_t.strip().split(':')
-        eh, em = end_t.strip().split(':')
+        # 將字串拆解，移除秒數(如果有)與符號
+        # 例如從 "09:00:00 ~ 18:00:00" 取出數字
+        parts = selected_time.replace('~', ':').split(':')
+        sh = parts[0].strip() # 開始時
+        sm = parts[1].strip() # 開始分
+        eh = parts[-2].strip() if len(parts) > 2 else "" # 結束時
+        em = parts[-1].strip() if len(parts) > 2 else "" # 結束分
         
-        # 依照底圖「時、分」的位置套印文字
-        c.drawString(275, 620, sh)  # 開始時
-        c.drawString(335, 620, sm)  # 開始分
-        c.drawString(425, 620, eh)  # 結束時
-        c.drawString(485, 620, em)  # 結束分
+        # 填入對應「時」、「分」前方的空格
+        c.drawString(275, 620, sh)  # 開始小時
+        c.drawString(335, 620, sm)  # 開始分鐘
+        c.drawString(425, 620, eh)  # 結束小時
+        c.drawString(485, 620, em)  # 結束分鐘
     except:
-        # 萬一拆解失敗的備案
-        c.drawString(275, 620, selected_time)
+        # 萬一格式異常，則退回原顯示方式
+        c.drawString(275, 620, selected_time.replace(':', ' ').replace('~', ' '))
     
     # 3. 申請原因 (Y=555)
     c.drawString(160, 555, reason)
