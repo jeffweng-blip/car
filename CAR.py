@@ -101,14 +101,15 @@ def generate_pdf_buffer():
     c.drawString(t_x, t_top_y + 8, "申請部門：")
     c.drawRightString(t_x + t_w, t_top_y + 8, f"填單日期： {today_roc}")
 
-    # 3. 表格數據 (使用您圖片中的格式)
+    # 3. 表格數據
     full_date_range = f"{roc_selected_date} ~ {roc_selected_date}"
+    # --- 修改重點：將「申請原因」標籤改為直式顯示 ---
     data = [
         ['公司', selected_company, '職稱', title],
         ['姓名', name, '車號', plate],
         ['預計停車日期', full_date_range, '', ''],
         ['預計停車時間', selected_time, '', ''],
-        ['申請\n原因', reason, '', '']
+        ['申\n請\n原\n因', reason, '', '']
     ]
 
     table = Table(data, colWidths=[80, 160, 80, 160], rowHeights=row_hs)
@@ -132,15 +133,13 @@ def generate_pdf_buffer():
     c.rect(t_x, t_top_y - sum(row_hs), t_w, sum(row_hs))
     c.rect(t_x - 2, t_top_y - sum(row_hs) - 2, t_w + 4, sum(row_hs) + 4)
 
-    # 5. 簽署區 (根據您的新圖片修改排版)
+    # 5. 簽署區 (根據圖片將部級主管與申請人分開)
     y_f = t_top_y - sum(row_hs) - 25
     c.setFont(font_name, 12)
-    # 部級主管在左側
     c.drawString(t_x, y_f, "部級主管：")
-    # 申請人在右側
     c.drawRightString(t_x + t_w, y_f, f"申請人：{applicant}")
     
-    # 總務部獨立一行 (參考一般公文排版)
+    # 總務部
     c.drawString(t_x, y_f - 40, "總務部：")
     
     # 6. 表單編號與底部警語
