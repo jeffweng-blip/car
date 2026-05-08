@@ -3,6 +3,7 @@ import configparser
 from datetime import datetime, timedelta
 import io
 import os
+import re  # 導入正則表達式套件
 
 # PDF 生成套件
 from reportlab.pdfgen import canvas
@@ -64,14 +65,17 @@ selected_date = st.date_input("預計停車日期", value=default_date)
 
 roc_parts = get_roc_parts(selected_date)
 
-# 時間選單：整理為 HH:MM 格式
+# --- [更新] 時間選單處理：過濾掉所有中文字與括號 ---
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
     for t in raw_times:
-        # 去除中文，統一轉為 HH:MM ~ HH:MM
-        clean_t = t.replace("時", ":").replace("分", "").replace(" ", "")
-        display_times.append(clean_t)
+        # 1. 先把「時」換成冒號
+        temp_t = t.replace("時", ":")
+        # 2. 使用正則表達式，只留下數字(0-9)、冒號(:)、波浪號(~)、空格( )
+        # 這會移除所有中文字(如「分」、「全日」)以及括號
+        clean_t = re.sub(r'[^\d:~ ]', '', temp_t)
+        display_times.append(clean_t.strip())
 except: 
     display_times = ["09:00 ~ 18:00"]
 
@@ -116,7 +120,7 @@ def generate_overlay_pdf():
     c.drawString(410, 750, today['month'])     
     c.drawString(450, 750, today['day'])       
 
-    # 2. 表格內容
+    # 2. 表格內容 (中間)
     c.drawString(150, 725, selected_company)  
     c.drawString(350, 725, title)             
     c.drawString(150, 690, name)              
@@ -125,32 +129,28 @@ def generate_overlay_pdf():
     # 預計停車日期 (Y=655)
     c.drawString(190, 655, roc_parts['year'])
     c.drawString(245, 655, roc_parts['month'])
-    c.drawString(290, 655, roc_parts['day'])
+    c.drawString(280, 655, roc_parts['day'])
     c.drawString(350, 655, roc_parts['year'])
     c.drawString(410, 655, roc_parts['month'])
-    c.drawString(455, 655, roc_parts['day'])
+    c.drawString(460, 655, roc_parts['day'])
     
-    # --- [更新] 預計停車時間：拆解並精確對齊時、分位置 (Y=620) ---
+    # --- 預計停車時間：拆解 HH:MM (Y=620) ---
     try:
-        # 將字串拆解，移除秒數(如果有)與符號
-        # 例如從 "09:00:00 ~ 18:00:00" 取出數字
         parts = selected_time.replace('~', ':').split(':')
         sh = parts[0].strip() # 開始時
         sm = parts[1].strip() # 開始分
         eh = parts[-2].strip() if len(parts) > 2 else "" # 結束時
         em = parts[-1].strip() if len(parts) > 2 else "" # 結束分
         
-        # 填入對應「時」、「分」前方的空格
-        c.drawString(190, 623, sh)  # 開始小時
-        c.drawString(245, 623, sm)  # 開始分鐘
-        c.drawString(310, 623, eh)  # 結束小時
-        c.drawString(365, 623, em)  # 結束分鐘
+        c.drawString(275, 620, sh)
+        c.drawString(335, 620, sm)
+        c.drawString(425, 620, eh)
+        c.drawString(485, 620, em)
     except:
-        # 萬一格式異常，則退回原顯示方式
-        c.drawString(275, 620, selected_time.replace(':', ' ').replace('~', ' '))
+        c.drawString(275, 620, selected_time)
     
     # 3. 申請原因 (Y=555)
-    c.drawString(160, 570, reason)
+    c.drawString(160, 555, reason)
 
     # 4. 簽署區 (Y=530)
     c.setFont(font_name, 12)
@@ -172,7 +172,7 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 生成與下載 ---
+# --- 下載區 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
