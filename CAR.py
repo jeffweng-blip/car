@@ -30,22 +30,25 @@ if 'Common' in companies: companies.remove('Common')
 st.title("🖨️ 神通申請單「套印」產生器")
 
 # --- UI 介面 ---
+# 1. 選擇公司
 selected_company = st.selectbox("公司名稱", options=companies)
 
 def get_val(key):
     try: 
+        # 讀取 INI 中的值並清理空白
         val = config.get(selected_company, key).split(',')[0]
         return val.strip()
     except: 
         return ""
 
-# 自動抓取 INI 連動資訊
+# 2. 自動抓取 INI 連動資訊
 title = get_val("Titles")
 name = get_val("Names")
 plate = get_val("CarPlates")
 reason = get_val("Reasons")
 applicant = get_val("Applicants")
 
+# 在畫面上顯示資訊供確認
 st.markdown("### 📋 申請單詳細資訊")
 col1, col2 = st.columns(2)
 with col1:
@@ -58,14 +61,16 @@ with col2:
 
 st.divider()
 
-# 日期與時間設定
+# 3. 日期與時間設定
 st.subheader("⏰ 停車時間設定")
 default_date = datetime.now() + timedelta(days=3)
 selected_date = st.date_input("預計停車日期", value=default_date)
 
+# 轉換民國日期格式
 roc_parts = get_roc_parts(selected_date)
 roc_date_range = f"{roc_parts['year']}/{roc_parts['month']}/{roc_parts['day']}"
 
+# 時間選單：自動轉換格式為 HH:MM
 try: 
     raw_times = config.get('Common', 'Times').split(',')
     display_times = []
@@ -80,7 +85,7 @@ selected_time = st.selectbox("預計停車時間", options=display_times)
 # 填單日期 (自動抓取當天)
 today = get_roc_parts(datetime.now())
 
-# 側邊欄輔助模式
+# 側邊欄輔助模式 (需要微調座標時再開啟)
 show_helper = st.sidebar.checkbox("開啟座標輔助模式", value=False)
 
 # --- PDF 套印邏輯 ---
@@ -131,14 +136,15 @@ def generate_overlay_pdf():
     # 預計停車時間
     c.drawString(160, 580, selected_time)
     
-    # --- [更新] 申請原因座標設定為 150, 530 ---
-    c.drawString(150, 530, reason)
+    # --- [座標修正] 申請原因：移回表格大框框內 ---
+    c.drawString(160, 555, reason)
 
-    # 3. 簽署區 (底部) - 為了避開申請原因，下移至 480
+    # 3. 簽署區 (底部)
     c.setFont(font_name, 12)
-    c.drawRightString(500, 480, applicant)
+    # --- [座標修正] 申請人：對齊「申請人：」標籤 ---
+    c.drawString(410, 530, applicant) 
 
-    # 座標輔助線
+    # 座標輔助線 (開發用)
     if show_helper:
         c.setStrokeColorRGB(1, 0, 0)
         c.setFont("Helvetica", 8)
@@ -154,7 +160,7 @@ def generate_overlay_pdf():
     buffer.seek(0)
     return buffer
 
-# --- 下載按鈕 ---
+# --- 生成與下載按鈕 ---
 st.divider()
 pdf_output = generate_overlay_pdf()
 st.download_button(
